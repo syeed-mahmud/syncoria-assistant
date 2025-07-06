@@ -56,25 +56,6 @@ st.markdown("""
         margin-bottom: 1rem;
         text-align: center;
     }
-    
-    .hamburger-btn {
-        position: fixed;
-        top: 1rem;
-        left: 1rem;
-        z-index: 1000;
-        background-color: #875A7B;
-        color: white;
-        border: none;
-        border-radius: 0.5rem;
-        padding: 0.5rem;
-        cursor: pointer;
-        font-size: 1.2rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    
-    .hamburger-btn:hover {
-        background-color: #A0729A;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -88,8 +69,6 @@ if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'sessions' not in st.session_state:
     st.session_state.sessions = {}
-if 'sidebar_visible' not in st.session_state:
-    st.session_state.sidebar_visible = True
 
 def create_new_session():
     """Create a new chat session"""
@@ -179,68 +158,60 @@ def get_session_title(session_id):
         return st.session_state.sessions[session_id]['title']
     return f"Chat {session_id[:8]}"
 
-# Hamburger button to toggle sidebar
-col1, col2 = st.columns([1, 10])
-with col1:
-    if st.button("☰", key="hamburger", help="Toggle sidebar"):
-        st.session_state.sidebar_visible = not st.session_state.sidebar_visible
-        st.rerun()
-
 # Sidebar
-if st.session_state.sidebar_visible:
-    with st.sidebar:
-        st.markdown("""
-        <div class="sidebar-header">
-            <h3>Syncoria Assistant</h3>
-        </div>
-        """, unsafe_allow_html=True)
+with st.sidebar:
+    st.markdown("""
+    <div class="sidebar-header">
+        <h3>Syncoria Assistant</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.image("images/logo.png", width=100):
+        pass
+    
+    # New chat button
+    if st.button("➕ New Chat", use_container_width=True, type="primary"):
+        create_new_session()
+        st.rerun()
+    
+    # Chat sessions
+    if st.session_state.sessions:
+        st.subheader("Recent Chats")
         
-        if st.image("images/logo.png", width=100):
-            pass
-        
-        # New chat button
-        if st.button("➕ New Chat", use_container_width=True, type="primary"):
-            create_new_session()
-            st.rerun()
-        
-        # Chat sessions
-        if st.session_state.sessions:
-            st.subheader("Recent Chats")
+        for session_id, session_info in st.session_state.sessions.items():
+            is_active = session_id == st.session_state.current_session_id
             
-            for session_id, session_info in st.session_state.sessions.items():
-                is_active = session_id == st.session_state.current_session_id
-                
-                if st.button(
-                    session_info['title'],
-                    key=f"session_{session_id}",
-                    help=f"Created: {format_timestamp(session_info['created_at'])}",
-                    type="primary" if is_active else "secondary",
-                    use_container_width=True
-                ):
-                    st.session_state.current_session_id = session_id
-                    # Load chat history
-                    history_data = get_chat_history(session_id)
-                    if history_data:
-                        processed_messages = []
-                        for msg in history_data.get('messages', []):
-                            if msg['role'].lower() == 'user':
-                                processed_messages.append({
-                                    'role': 'user',
-                                    'content': msg.get('query', msg.get('content', '')),
-                                    'timestamp': msg.get('timestamp', '')
-                                })
-                            else:
-                                processed_messages.append({
-                                    'role': 'assistant',
-                                    'content': msg.get('content', ''),
-                                    'analysis': msg.get('analysis', msg.get('content', '')),
-                                    'chart_generated': bool(msg.get('chart_s3_url')),
-                                    'chart_s3_url': msg.get('chart_s3_url'),
-                                    'chart_decision_reason': msg.get('chart_decision_reason'),
-                                    'timestamp': msg.get('timestamp', '')
-                                })
-                        st.session_state.chat_history = processed_messages
-                    st.rerun()
+            if st.button(
+                session_info['title'],
+                key=f"session_{session_id}",
+                help=f"Created: {format_timestamp(session_info['created_at'])}",
+                type="primary" if is_active else "secondary",
+                use_container_width=True
+            ):
+                st.session_state.current_session_id = session_id
+                # Load chat history
+                history_data = get_chat_history(session_id)
+                if history_data:
+                    processed_messages = []
+                    for msg in history_data.get('messages', []):
+                        if msg['role'].lower() == 'user':
+                            processed_messages.append({
+                                'role': 'user',
+                                'content': msg.get('query', msg.get('content', '')),
+                                'timestamp': msg.get('timestamp', '')
+                            })
+                        else:
+                            processed_messages.append({
+                                'role': 'assistant',
+                                'content': msg.get('content', ''),
+                                'analysis': msg.get('analysis', msg.get('content', '')),
+                                'chart_generated': bool(msg.get('chart_s3_url')),
+                                'chart_s3_url': msg.get('chart_s3_url'),
+                                'chart_decision_reason': msg.get('chart_decision_reason'),
+                                'timestamp': msg.get('timestamp', '')
+                            })
+                    st.session_state.chat_history = processed_messages
+                st.rerun()
 
 # Main content area
 st.markdown("""
@@ -306,7 +277,7 @@ if st.session_state.current_session_id:
 st.markdown("---")
 with st.form("chat_form", clear_on_submit=True):
     user_input = st.text_input(
-        "Ask anything about your business data...",
+        "",
         placeholder="Type your question here...",
         key="user_input"
     )
