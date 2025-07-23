@@ -67,9 +67,7 @@ st.markdown("""
         color: #0e101a;
         border: 1px solid #0e101a;
     }
-    .st-emotion-cache-1y34ygi {
-    padding: 0.5rem 0.5rem 0.5rem;
-    }
+    
             
     .st-emotion-cache-1yskf17 {
         background-color: #4d617a;
@@ -276,13 +274,16 @@ for msg in st.session_state.chat_history:
         st.markdown(f"<div class='user-message'><strong>You:</strong><br>{msg.get('content') or msg.get('query', '')}</div>", unsafe_allow_html=True)
     elif role == 'assistant' and not msg.get('is_thinking'):
         st.markdown("<strong>Syncoria Assistant:</strong>", unsafe_allow_html=True)
-        analysis_text = msg.get('analysis', '')
+        # Handle both 'analysis' (new messages) and 'content' (historical messages) fields
+        analysis_text = msg.get('analysis', '') or msg.get('content', '')
         st.markdown(analysis_text)
 
+        # Display dataframe if available
         if 'dataframe' in msg and msg['dataframe'] is not None:
             st.dataframe(msg['dataframe'], use_container_width=True)
 
-        if msg.get('chart_generated') and msg.get('chart_s3_url'):
+        # Display chart if URL is available (works for both new and historical messages)
+        if msg.get('chart_s3_url'):
             st.image(msg['chart_s3_url'], caption="Generated Chart", use_container_width=True)
         
         # if msg.get('csv_url') or msg.get('xlsx_url'):
