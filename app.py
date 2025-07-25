@@ -278,42 +278,23 @@ for msg in st.session_state.chat_history:
         analysis_text = msg.get('analysis', '') or msg.get('content', '')
         st.markdown(analysis_text)
 
-        # Display dataframe if available
+        # Display dataframe if available (either stored or from CSV URL)
+        dataframe_to_show = None
         if 'dataframe' in msg and msg['dataframe'] is not None:
-            st.dataframe(msg['dataframe'], use_container_width=True)
+            dataframe_to_show = msg['dataframe']
+        elif msg.get('csv_url'):
+            try:
+                dataframe_to_show = pd.read_csv(msg['csv_url'])
+            except Exception as e:
+                st.warning(f"Could not load data table from previous session: {e}")
+        
+        if dataframe_to_show is not None:
+            st.dataframe(dataframe_to_show, use_container_width=True)
 
         # Display chart if URL is available (works for both new and historical messages)
         if msg.get('chart_s3_url'):
-            st.image(msg['chart_s3_url'], caption="Generated Chart", use_container_width=True)
-        
-        # if msg.get('csv_url') or msg.get('xlsx_url'):
-        #     col1, col2 = st.columns(2)
-        #     if msg.get('csv_url'):
-        #         with col1:
-        #             try:
-        #                 csv_data = requests.get(msg['csv_url']).content
-        #                 st.download_button(
-        #                     label="📄 Download CSV", 
-        #                     data=csv_data,
-        #                     file_name=f"{st.session_state.current_session_id}.csv", 
-        #                     mime="text/csv",
-        #                     use_container_width=True
-        #                 )
-        #             except Exception as e:
-        #                 st.error(f"Error loading CSV: {e}")
-        #     if msg.get('xlsx_url'):
-        #         with col2:
-        #             try:
-        #                 xlsx_data = requests.get(msg['xlsx_url']).content
-        #                 st.download_button(
-        #                     label="📊 Download Excel", 
-        #                     data=xlsx_data,
-        #                     file_name=f"{st.session_state.current_session_id}.xlsx", 
-        #                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        #                     use_container_width=True
-        #                 )
-        #             except Exception as e:
-        #                 st.error(f"Error loading Excel file: {e}")
+            st.image(msg['chart_s3_url'], use_container_width=True)
+    
 
 # Handle input and processing
 if user_input := st.chat_input("Ask about your Odoo data..."):
