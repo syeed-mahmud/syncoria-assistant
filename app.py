@@ -137,13 +137,16 @@ def get_chat_history(session_id):
         st.error(f"Failed to get chat history: {e}")
     return []
 
+from datetime import datetime
+
 def format_timestamp(timestamp_str):
-    """Format timestamp for display"""
-    if not timestamp_str: return ""
+    """Format an ISO timestamp string to 'MM/DD/YYYY HH:MM' format"""
+    if not timestamp_str:
+        return ""
     try:
         dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
         return dt.strftime("%m/%d/%Y %H:%M")
-    except:
+    except ValueError:
         return timestamp_str
 
 def process_and_display_stream(query, session_id):
